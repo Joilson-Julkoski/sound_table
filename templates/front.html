@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<script>
+    function play_audio(name) {
+        new Audio(`/static/audios/${name}.mp3`).play()
+    }
+</script>
+
+<body>
+    <div style="display: flex;">
+    {% for i in list_buttons %}
+    <div style="display: flex; flex-direction: column; align-items: center;" onclick="play_audio('{{i.key}}')">
+        <img src="/static/button.png" alt="BOTÃO FODA" style="width: 200px;" >
+        <p>{{i.title}}</p>    
+    </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>

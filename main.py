@@ -6,14 +6,24 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 import threading
 
+from flask import Flask
+from flask import render_template
+app = Flask(__name__)
+
+audios=[]
+audios_keys = []
+
+def list_buttons(): 
+    # return ["a", "b", "c"]
+    return os.listdir("./static/audios")
 
 
+@app.route("/")
+def hello_world():
+    return render_template('front.html', list_buttons = audios)
 
-
-
-
-def download_video(link):
-    return YouTube(link).streams.first().download()
+def download_video(link, key):
+    return YouTube(link).streams.first().download(output_path='static/audios', filename=key)
 
 
 def convert_video_to_audio_ffmpeg(video_file, output_ext="mp3"):
@@ -44,7 +54,8 @@ def write_on_has_link(link):
 
 def check_has_link(link):
     has_doc = open("has.txt", "r").readlines()
-    return has_doc.count(link) > 0
+    print(has_doc)
+    return has_doc.count(link + '\n') > 0
 
 
 
@@ -53,11 +64,21 @@ def check_has_link(link):
 def on_snapshot(doc_snapshot, changes, read_time):
     for change in changes:
         if change.type.name == "ADDED":
-            link = change.document.to_dict()["link"]
-            print(link)
+            data = change.document.to_dict()
+            link = data["link"]
+            key = data['key']
+            title = data['title']
+            if audios_keys.count(key) == 0:
+                audios_keys.append(key)
+                audios.append({
+                    'key': key,
+                    'link': link,
+                    'title': title,
+                })
+
             if not check_has_link(link):
                 print("download")
-                video_path = download_video(link)
+                video_path = download_video(link, key)
                 print("convert")
                 convert_video_to_audio_ffmpeg(video_path)
                 print("delet")
@@ -71,7 +92,8 @@ doc_ref = db.collection("videos")
 # Watch the document
 doc_watch = doc_ref.on_snapshot(on_snapshot)
 
-
+os.system('chromium --kiosk http://localhost:5000')
+app.run(debug=True, host='0.0.0.0')
 while True:
     pass
 
